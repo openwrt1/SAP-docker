@@ -22,8 +22,8 @@ RUN curl -L -H "Cache-Control: no-cache" -o /tmp/v2ray.zip \
     && rm -f /tmp/v2ray.zip
 
 # 拷贝启动脚本到工作目录，并修复其格式
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x ./entrypoint.sh && dos2unix ./entrypoint.sh
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh && dos2unix entrypoint.sh
 
 # ---- STAGE 2: Final Image ----
 # This is a clean, minimal image. We only copy the necessary artifacts from the builder.
@@ -31,11 +31,13 @@ FROM debian:bullseye-slim
 
 # 安装运行时脚本真正需要的依赖
 RUN apt-get update && apt-get install -y --no-install-recommends jq qrencode && rm -rf /var/lib/apt/lists/*
+# 创建 v2ray 规则文件所需的目录
+RUN mkdir -p /usr/local/share/v2ray
 
 # Copy prepared files from the builder stage.
 COPY --from=builder /app/v2ray /usr/local/bin/v2ray
-COPY --from=builder /app/geoip.dat /usr/local/share/v2ray/geoip.dat
-COPY --from=builder /app/geosite.dat /usr/local/share/v2ray/geosite.dat
+COPY --from=builder /app/geoip.dat /usr/local/share/v2ray/
+COPY --from=builder /app/geosite.dat /usr/local/share/v2ray/
 COPY --from=builder /app/entrypoint.sh /entrypoint.sh
 
 # 设置默认端口（可被 PORT 环境变量覆盖）
