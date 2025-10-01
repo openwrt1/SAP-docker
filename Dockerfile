@@ -21,6 +21,11 @@ RUN curl -L -H "Cache-Control: no-cache" -o /tmp/v2ray.zip \
     && unzip /tmp/v2ray.zip -d . \
     && rm -f /tmp/v2ray.zip
 
+# ==== 安装 cloudflared ====
+RUN curl -L --output cloudflared.deb "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb" \
+    && dpkg -i cloudflared.deb \
+    && rm cloudflared.deb
+
 # 拷贝启动脚本到工作目录，并修复其格式
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh && dos2unix entrypoint.sh
@@ -36,6 +41,7 @@ RUN mkdir -p /usr/local/share/v2ray
 
 # Copy prepared files from the builder stage.
 COPY --from=builder /app/v2ray /usr/local/bin/v2ray
+COPY --from=builder /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 COPY --from=builder /app/geoip.dat /usr/local/share/v2ray/
 COPY --from=builder /app/geosite.dat /usr/local/share/v2ray/
 COPY --from=builder /app/entrypoint.sh /entrypoint.sh

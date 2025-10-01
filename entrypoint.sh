@@ -39,7 +39,7 @@ echo "==== DEBUG: UUID set to: ${UUID} ===="
 # Cloud Foundry 会注入 PORT 环境变量。其他变量可以由用户在部署时提供。
 INBOUND_PORT="${PORT:-10086}"
 WS_PATH="${WS_PATH:-/laoluo}"
-VMESS_HOST="${VMESS_HOST:-}"
+TUNNEL_TOKEN="${TUNNEL_TOKEN:-}" # 从环境变量读取 Cloudflare Tunnel Token
 DOMAIN="${DOMAIN:-}"
 
 if [ -n "${VCAP_APPLICATION:-}" ]; then
@@ -56,7 +56,8 @@ else
 	ROUTE_HOST=""
 fi
 
-HOST="${VMESS_HOST:-${DOMAIN:-$ROUTE_HOST}}"
+# 优先顺序: 外部注入的 DOMAIN -> 从 VCAP 解析的 ROUTE_HOST
+HOST="${DOMAIN:-$ROUTE_HOST}"
 if [ -z "$HOST" ]; then
 	HOST="your-domain.com"
 fi
@@ -73,7 +74,7 @@ cat >/etc/v2ray-config.json <<EOF
   },
   "inbounds": [{
     "port": ${INBOUND_PORT},
-    "listen": "0.0.0.0",
+    "listen": "127.0.0.1",
     "protocol": "vmess",
     "settings": {
       "clients": [{
@@ -160,5 +161,18 @@ fi
 echo "==== DEBUG: Found v2ray binary at: ${V2RAY_BIN} ===="
 echo "==== DEBUG: Attempting to start v2ray... ===="
 
-# ====== 启动 v2ray ======
-exec "$V2RAY_BIN" run -config /etc/v2ray-config.json
+# ====== 启动 v2ray 和 cloudflared ======
+# 1. 在后台启动 v2ray
+"$V2RAY_BIN" run -config /etc/v2ray-config.json &
+
+# 2. 检查是否提供了 Tunnel Token
+if [ -n "$TUNNEL_TOKEN" ]; then
+	echo "==== DEBUG: Found Tunnel Token, starting cloudflared... ===="
+	# 启动 cloudflared，并将其作为主进程 (使用 exec)
+	# 它会将外部流量转发到本地的 v2ray 端口
+	exec cloudflared tunnel --no-autoupdate run --token "$TUNNEL_TOKEN"
+else
+	echo "==== WARNING: No TUNNEL_TOKEN found, v2ray is running but not exposed via Cloudflare Tunnel. ===="
+	# 如果没有 token，则让 v2ray 作为主进程，保持容器运行
+	wait
+fi
