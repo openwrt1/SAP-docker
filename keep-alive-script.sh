@@ -24,10 +24,7 @@ echo "4. Checking status of app '${CF_APP}'..."
 APP_STATUS=$(cf app "${CF_APP}" | grep '^#0' | awk '{print $2}' || true)
 
 if [ "$APP_STATUS" = "running" ]; then
-	echo "App is already running. No action needed."
-	echo "App is already running. No action needed."
-	echo "App is already running. No action needed."
-	echo "App is already running. No action needed."
+	echo "App is already running. No action needed.。。。。。。。。。。。。。。。。。。。。。。。。。。。"
 else
 	echo "App is not running (status: '${APP_STATUS:-stopped}'). Attempting to start it..."
 	cf start "${CF_APP}"
