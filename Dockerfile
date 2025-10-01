@@ -1,37 +1,45 @@
-FROM debian:bullseye
+# ---- STAGE 1: Builder ----
+# This stage contains all build tools needed to prepare our application files.
+FROM debian:bullseye AS builder
 
+# 设置工作目录，这是一个好习惯
+WORKDIR /app
+
+# 安装构建时所需的工具
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    jq \
-    qrencode \
-    bash \
     unzip \
     dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # ==== 安装 v2ray ====
-# 从 GitHub Releases 下载 v2ray，解压并放置到 /usr/local/bin/
+# 下载 v2ray 并解压到当前工作目录 (/app)
 ARG V2RAY_VERSION=v5.15.0
-ARG TARGETARCH=amd64
 RUN curl -L -H "Cache-Control: no-cache" -o /tmp/v2ray.zip \
     "https://github.com/v2fly/v2ray-core/releases/download/${V2RAY_VERSION}/v2ray-linux-64.zip" \
-    && unzip /tmp/v2ray.zip -d /tmp/v2ray \
-    && mkdir -p /usr/local/share/v2ray \
-    && install -m 755 /tmp/v2ray/v2ray /usr/local/bin/v2ray \
-    && install -m 644 /tmp/v2ray/geoip.dat /usr/local/share/v2ray/geoip.dat \
-    && install -m 644 /tmp/v2ray/geosite.dat /usr/local/share/v2ray/geosite.dat \
-    && rm -rf /tmp/v2ray.zip /tmp/v2ray
+    && unzip /tmp/v2ray.zip -d . \
+    && rm -f /tmp/v2ray.zip
 
-# 拷贝启动脚本
+# 拷贝启动脚本到工作目录，并修复其格式
 COPY entrypoint.sh /entrypoint.sh
-# 确保脚本有执行权限，并转换为 Unix 换行符
-RUN chmod +x /entrypoint.sh
-RUN dos2unix /entrypoint.sh
+RUN chmod +x ./entrypoint.sh && dos2unix ./entrypoint.sh
+
+# ---- STAGE 2: Final Image ----
+# This is a clean, minimal image. We only copy the necessary artifacts from the builder.
+FROM debian:bullseye-slim
+
+# 安装运行时脚本真正需要的依赖
+RUN apt-get update && apt-get install -y --no-install-recommends jq qrencode && rm -rf /var/lib/apt/lists/*
+
+# Copy prepared files from the builder stage.
+COPY --from=builder /app/v2ray /usr/local/bin/v2ray
+COPY --from=builder /app/geoip.dat /usr/local/share/v2ray/geoip.dat
+COPY --from=builder /app/geosite.dat /usr/local/share/v2ray/geosite.dat
+COPY --from=builder /app/entrypoint.sh /entrypoint.sh
 
 # 设置默认端口（可被 PORT 环境变量覆盖）
 EXPOSE 10086
 
 # 设置入口
-# 使用一个简单的命令进行调试，而不是执行复杂脚本
-CMD ["sleep", "3600"]
+ENTRYPOINT ["/entrypoint.sh"]
