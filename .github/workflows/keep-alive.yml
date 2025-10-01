@@ -1,0 +1,36 @@
+name: SAP CF APP 保活
+
+on:
+  schedule:
+    # 每 20 分钟运行一次，以保持应用活跃
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: true
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: KeepAlive via container
+        uses: docker://ghcr.io/uncleluogithub/cf-keepalive:latest
+        env:
+          # --- 必须配置的 secrets ---
+          CF_USERNAME: ${{ secrets.CF_USERNAME }}
+          CF_PASSWORD: ${{ secrets.CF_PASSWORD }}
+          CF_API: ${{ secrets.CF_API }}
+          CF_ORG: ${{ secrets.CF_ORG }}
+          CF_SPACE: ${{ secrets.CF_SPACE }}
+          CF_APP: ${{ secrets.CF_APP }}
+
+          # --- 可选配置 ---
+          # 设置为 "true" 会自动将应用的健康检查类型改为 "process"
+          CF_SET_PROCESS_HC: "true"
+          # 调试时打开，会输出更详细的脚本执行日志
+          # DEBUG: "1"
+          # 调试时打开，会打印所有 CF API 的请求和响应
+          # CF_TRACE: "true"
