@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 jobs:
-  build-and-push:
+  build-main-app:
     runs-on: ubuntu-latest
     # 2. 授予工作流写入 GitHub Packages 的权限
     permissions:
@@ -49,11 +49,26 @@ jobs:
             ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
 
+  build-keepalive-tool:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract metadata for keep-alive image
         id: meta-keepalive
         uses: docker/metadata-action@v5
         with:
-          # 关键：这里会自动将仓库名转为小写
           images: ghcr.io/${{ github.repository }}-keepalive
 
       - name: Build and push keep-alive image
