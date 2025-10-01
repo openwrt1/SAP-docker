@@ -43,5 +43,8 @@ jobs:
         with:
           context: .
           push: true
+          # 添加这个 LABEL 来告诉 Cloud Foundry 使用 process 健康检查
+          labels: |
+            org.cloudfoundry.health-check.type=process
+            ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
