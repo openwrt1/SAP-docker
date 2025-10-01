@@ -18,7 +18,16 @@ cf auth "${CF_USERNAME}" "${CF_PASSWORD}"
 echo "3. Targeting Org '${CF_ORG}' and Space '${CF_SPACE}'"
 cf target -o "${CF_ORG}" -s "${CF_SPACE}"
 
-echo "4. Restarting app '${CF_APP}' to keep it alive"
-cf restart "${CF_APP}"
+echo "4. Checking status of app '${CF_APP}'..."
+# 获取应用第一个实例的状态 (例如 "running", "down", "crashed")
+# `|| true` 可以防止在应用停止、没有实例输出时 grep 失败导致脚本退出
+APP_STATUS=$(cf app "${CF_APP}" | grep '^#0' | awk '{print $2}' || true)
+
+if [ "$APP_STATUS" = "running" ]; then
+	echo "App is already running. No action needed."
+else
+	echo "App is not running (status: '${APP_STATUS:-stopped}'). Attempting to start it..."
+	cf start "${CF_APP}"
+fi
 
 echo "--- Keep-Alive Script Finished Successfully ---"
