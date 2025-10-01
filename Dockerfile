@@ -1,6 +1,12 @@
 FROM debian:bullseye
 
-RUN apt update && apt install -y curl jq qrencode bash unzip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    jq \
+    qrencode \
+    bash \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
 
 # 拷贝启动脚本
