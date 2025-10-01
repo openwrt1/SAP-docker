@@ -33,4 +33,5 @@ RUN dos2unix /entrypoint.sh
 EXPOSE 10086
 
 # 设置入口
-ENTRYPOINT ["/entrypoint.sh"]
+# 使用一个简单的命令进行调试，而不是执行复杂脚本
+CMD ["sleep", "3600"]
