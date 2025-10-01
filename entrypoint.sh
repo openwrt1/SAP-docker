@@ -7,7 +7,7 @@ export TERM="${TERM:-xterm}"
 export LANG="${LANG:-C.UTF-8}"
 export LC_ALL="${LC_ALL:-C.UTF-8}"
 
-UUID_FILE="/etc/uuid.txt"
+UUID_FILE="/tmp/uuid.txt"
 
 echo "==== DEBUG: SCRIPT START ===="
 echo "==== DEBUG: Printing environment variables ===="
