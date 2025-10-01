@@ -1,0 +1,19 @@
+# 使用一个轻量级的基础镜像
+FROM debian:bullseye-slim
+
+# 安装 cf-cli 的依赖
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+
+# 安装最新版的 cf-cli (v8)
+RUN wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | apt-key add -
+RUN echo "deb https://packages.cloudfoundry.org/debian stable main" | tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+RUN apt-get update && apt-get install -y cf8-cli
+
+# 将我们的保活脚本复制到镜像中
+COPY keep-alive-script.sh /usr/local/bin/keep-alive
+
+# 赋予脚本执行权限
+RUN chmod +x /usr/local/bin/keep-alive
+
+# 设置容器的入口点，当容器启动时，执行这个脚本
+ENTRYPOINT ["keep-alive"]
