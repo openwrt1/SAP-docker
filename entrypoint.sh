@@ -36,8 +36,17 @@ fi
 echo "==== DEBUG: UUID set to: ${UUID} ===="
 
 # ==== 环境变量与默认值 ====
-# Cloud Foundry 会注入 PORT 环境变量。其他变量可以由用户在部署时提供。
-INBOUND_PORT="${PORT:-10086}"
+# 在 Cloud Foundry 这样的 PaaS 平台上，平台会为应用分配一个随机的内部端口，
+# 并通过 $PORT 环境变量告知应用。应用必须监听这个端口，才能接收到来自平台路由器的流量。
+# 因此，我们优先使用 $PORT 环境变量。
+# 只有在本地测试等没有 $PORT 变量的环境中，我们才使用一个固定的默认端口（如 10086）作为备用。
+if [ -n "${PORT:-}" ]; then
+	echo "==== INFO: Found '$PORT' environment variable provided by the platform. Using it as the inbound port. ===="
+	INBOUND_PORT="$PORT"
+else
+	echo "==== INFO: No '$PORT' environment variable found. Using default inbound port '10086'. ===="
+	INBOUND_PORT="10086"
+fi
 WS_PATH="${WS_PATH:-/laoluo}"
 TUNNEL_TOKEN="${TUNNEL_TOKEN:-}" # 从环境变量读取 Cloudflare Tunnel Token
 DOMAIN="${DOMAIN:-}"
