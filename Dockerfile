@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qrencode \
     bash \
     unzip \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # ==== 安装 v2ray ====
@@ -24,7 +25,9 @@ RUN curl -L -H "Cache-Control: no-cache" -o /tmp/v2ray.zip \
 
 # 拷贝启动脚本
 COPY entrypoint.sh /entrypoint.sh
+# 确保脚本有执行权限，并转换为 Unix 换行符
 RUN chmod +x /entrypoint.sh
+RUN dos2unix /entrypoint.sh
 
 # 设置默认端口（可被 PORT 环境变量覆盖）
 EXPOSE 10086
