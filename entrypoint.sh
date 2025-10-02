@@ -83,7 +83,7 @@ cat >/etc/v2ray-config.json <<EOF
   },
   "inbounds": [{
     "port": ${INBOUND_PORT},
-    "listen": "127.0.0.1",
+    "listen": "0.0.0.0",
     "protocol": "vmess",
     "settings": {
       "clients": [{
